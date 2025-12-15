@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Where Safety Lives: Architecture-Driven Risks in Healthcare AI (esp. Mistral)</title>
+    <meta name="author" content="Jenny Zhu">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Merriweather:ital,wght@0,300;0,400;0,700;1,300&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        claude: {
+                            bg: '#fcfcf9',
+                            text: '#333333',
+                            accent: '#d97757', 
+                            subtle: '#6b6b6b',
+                            border: '#e5e5e0',
+                            card: '#ffffff',
+                            link: '#d97757'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Merriweather', 'serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #fcfcf9;
+            color: #333333;
+            -webkit-font-smoothing: antialiased;
+        }
+        .prose-link {
+            color: #d97757;
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: border-color 0.2s;
+        }
+        .prose-link:hover {
+            border-bottom-color: #d97757;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid #e5e5e0;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.02);
+        }
+        .flow-arrow {
+            stroke: #d97757;
+            stroke-width: 1.5;
+            fill: none;
+        }
+        /* New diagram styles */
+        .diagram-container {
+            position: relative;
+        }
+        .diagram-label {
+            font-family: 'Inter', sans-serif;
+            font-size: 11px;
+            fill: #6b6b6b;
+        }
+        .diagram-title {
+            font-family: 'Merriweather', serif;
+            font-weight: 700;
+            fill: #333333;
+        }
+    </style>
+</head>
+<body class="py-12 px-4 sm:px-8 max-w-5xl mx-auto leading-relaxed">
+
+    <!-- Header -->
+    <header class="mb-16 text-center border-b border-claude-border pb-12">
+        <div class="inline-block px-3 py-1 mb-4 text-xs font-semibold tracking-wider text-claude-accent uppercase bg-orange-50 rounded-full border border-orange-100">Research Brief</div>
+        <h1 class="text-4xl md:text-5xl font-serif text-claude-text mb-6">Healthcare AI: Evaluation & Architecture</h1>
+        <p class="text-xl text-claude-subtle max-w-2xl mx-auto font-sans font-light">
+            Analyzing the gap between generic benchmarks and clinical reality, the risks of open-weight fine-tuning, and the implications of Mixture of Experts (MoE) architectures.
+        </p>
+    </header>
+
+    <!-- Section 1: Evaluation -->
+    <section class="mb-20">
+        <h2 class="text-2xl font-serif text-claude-text mb-8 flex items-center gap-3">
+            <span class="w-8 h-8 rounded-full bg-claude-accent text-white flex items-center justify-center text-sm font-sans font-bold">1</span>
+            Healthcare-Specific Evaluation
+        </h2>
+        
+        <div class="grid md:grid-cols-3 gap-8 mb-12">
+            <div class="md:col-span-2 space-y-6">
+                <p class="text-lg text-claude-subtle">
+                    Current "passing" scores on medical exams do not correlate with clinical readiness. Generic alignment benchmarks fail to capture the multi-dimensional safety requisite for patient care.
+                </p>
+                
+                <div class="glass-card p-6 rounded-xl">
+                    <h3 class="font-bold text-lg mb-2">The Evolution of Benchmarks</h3>
+                    <ul class="space-y-4">
+                        <li>
+                            <a href="https://arxiv.org/abs/2203.14371" target="_blank" class="block group">
+                                <span class="text-claude-accent font-semibold group-hover:underline">MedMCQA (CHIL 2022) ↗</span>
+                                <span class="block text-sm text-claude-subtle mt-1">~194k questions from Indian medical entrance exams. While it tests domain knowledge, it functions primarily as a trivia retrieval task rather than a clinical workflow simulation.</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://arxiv.org/abs/2009.13081" target="_blank" class="block group">
+                                <span class="text-claude-accent font-semibold group-hover:underline">MedQA (USMLE) ↗</span>
+                                <span class="block text-sm text-claude-subtle mt-1">Focuses on licensing questions. Frontier LLMs now encounter a "saturation ceiling" here, rendering the metric less useful for distinguishing model capability in real-world scenarios.</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Visualization: Evaluation Hierarchy -->
+            <div class="bg-white rounded-xl border border-claude-border p-6 flex flex-col justify-center items-center relative overflow-hidden">
+                <h4 class="absolute top-4 left-4 text-xs font-bold text-claude-subtle uppercase tracking-widest">Evaluation Maturity</h4>
+                <svg viewBox="0 0 200 300" class="w-full h-full max-h-[300px]">
+                    <!-- Level 1 -->
+                    <rect x="40" y="40" width="120" height="40" rx="4" fill="#f3f4f6" stroke="#d1d5db" />
+                    <text x="100" y="65" text-anchor="middle" font-size="10" font-family="Inter" fill="#6b7280">Generic (MMLU)</text>
+                    
+                    <!-- Arrow -->
+                    <path d="M100 80 L100 100" class="flow-arrow" marker-end="url(#arrowhead)" />
+                    
+                    <!-- Level 2 -->
+                    <rect x="30" y="100" width="140" height="50" rx="4" fill="#fff7ed" stroke="#fdba74" />
+                    <text x="100" y="120" text-anchor="middle" font-size="10" font-family="Inter" font-weight="bold" fill="#9a3412">Exam Benchmarks</text>
+                    <text x="100" y="135" text-anchor="middle" font-size="8" font-family="Inter" fill="#9a3412">MedQA / MedMCQA</text>
+                    
+                    <!-- Arrow -->
+                    <path d="M100 150 L100 170" class="flow-arrow" marker-end="url(#arrowhead)" />
+                    
+                    <!-- Level 3 -->
+                    <rect x="20" y="170" width="160" height="80" rx="4" fill="#fff1f2" stroke="#e11d48" stroke-width="2" />
+                    <text x="100" y="195" text-anchor="middle" font-size="11" font-family="Inter" font-weight="bold" fill="#be123c">Holistic Clinical Eval</text>
+                    <text x="100" y="215" text-anchor="middle" font-size="9" font-family="Inter" fill="#be123c">MedHELM (121 Tasks)</text>
+                    <text x="100" y="230" text-anchor="middle" font-size="9" font-family="Inter" fill="#be123c">Reliability + Fairness</text>
+
+                    <!-- Definitions -->
+                    <defs>
+                        <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                            <polygon points="0 0, 10 3.5, 0 7" fill="#d97757" />
+                        </marker>
+                    </defs>
+                </svg>
+            </div>
+        </div>
+
+        <div class="grid md:grid-cols-2 gap-6">
+            <div class="glass-card p-6 rounded-xl border-l-4 border-claude-accent">
+                <h3 class="font-serif font-bold text-lg mb-3">Holistic Frameworks</h3>
+                <p class="text-sm text-claude-subtle mb-4">Moving beyond accuracy to reliability, fairness, and calibration.</p>
+                <ul class="space-y-3">
+                    <li>
+                        <a href="https://arxiv.org/abs/2505.23802" class="prose-link font-medium">MedHELM (2025)</a>
+                        <p class="text-xs text-gray-500 mt-1">Taxonomy of 5 categories, 22 subcategories, 121 task types. Validated by 29 clinicians.</p>
+                    </li>
+                    <li>
+                        <a href="https://arxiv.org/abs/2211.09110" class="prose-link font-medium">HELM (Bommasani et al.)</a>
+                        <p class="text-xs text-gray-500 mt-1">Established multi-axis evaluation as a general principle.</p>
+                    </li>
+                </ul>
+            </div>
+            
+            <div class="glass-card p-6 rounded-xl">
+                <h3 class="font-serif font-bold text-lg mb-3">Critical Review</h3>
+                <p class="text-sm text-claude-subtle mb-4">
+                    <a href="https://pubmed.ncbi.nlm.nih.gov/38965432/" class="prose-link font-medium">Tam et al. (Nature Digital Medicine)</a> reviewed 142 studies.
+                </p>
+                <div class="bg-red-50 p-3 rounded-lg text-xs text-red-800 leading-relaxed border border-red-100">
+                    <strong>Conclusion:</strong> Most studies suffer from small samples, weak reliability, and poor generalisability. Current human evaluation is not yet "regulatory grade."
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <hr class="border-gray-200 my-16">
+
+    <!-- Section 2: Open Weights -->
+    <section class="mb-20">
+        <h2 class="text-2xl font-serif text-claude-text mb-8 flex items-center gap-3">
+            <span class="w-8 h-8 rounded-full bg-claude-accent text-white flex items-center justify-center text-sm font-sans font-bold">2</span>
+            Open Weights & "Moral Robustness"
+        </h2>
+
+        <div class="grid md:grid-cols-2 gap-12">
+            <div>
+                <h3 class="font-bold text-lg mb-4">Fine-Tuning Degrades Safety</h3>
+                <ul class="space-y-6">
+                    <li class="relative pl-6 before:content-[''] before:absolute before:left-0 before:top-2 before:w-2 before:h-2 before:bg-claude-accent before:rounded-full">
+                        <a href="https://aclanthology.org/2025.llmsec-1.10/" class="prose-link font-semibold">Fraser et al. (2025)</a>
+                        <p class="text-sm text-gray-600 mt-1">"Fine-Tuning Lowers Safety": Demonstrates that even benign fine-tuning data can disrupt existing safety guardrails.</p>
+                    </li>
+                    <li class="relative pl-6 before:content-[''] before:absolute before:left-0 before:top-2 before:w-2 before:h-2 before:bg-gray-300 before:rounded-full">
+                        <a href="https://openreview.net/forum?id=9U1aG3dI8G" class="prose-link font-semibold">Qi et al. (OpenReview)</a>
+                        <p class="text-sm text-gray-600 mt-1">Identified "shallow safety alignment"—noting that models often only adjust the first few tokens, making them easy to overwrite.</p>
+                    </li>
+                </ul>
+            </div>
+
+            <div>
+                <h3 class="font-bold text-lg mb-4">Vulnerability Analysis</h3>
+                <div class="glass-card p-5 rounded-lg border-l-4 border-red-400">
+                    <h4 class="font-semibold text-gray-800">Cisco Talos Analysis</h4>
+                    <p class="text-sm text-gray-600 mt-2 mb-3">
+                        Several open-weight models display high jailbreak success rates under multi-turn attacks.
+                    </p>
+                    <a href="https://arxiv.org/html/2511.03247v1" class="text-xs font-mono text-claude-accent hover:underline bg-white px-2 py-1 rounded border border-gray-200">
+                        View Paper ↗
+                    </a>
+                    <div class="mt-4 pt-4 border-t border-gray-100 flex justify-between items-center">
+                        <span class="text-xs text-gray-500">Mistral Large-2 Jailbreak Rate</span>
+                        <span class="text-lg font-bold text-red-600">~93%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <hr class="border-gray-200 my-16">
+
+    <!-- Section 3: Comparative Architecture (UPDATED) -->
+    <section class="mb-20">
+        <h2 class="text-2xl font-serif text-claude-text mb-8 flex items-center gap-3">
+            <span class="w-8 h-8 rounded-full bg-claude-accent text-white flex items-center justify-center text-sm font-sans font-bold">3</span>
+            Architectural Safety Placement
+        </h2>
+        
+        <p class="text-lg text-claude-subtle mb-10 max-w-3xl">
+            A fundamental divergence exists in where safety mechanisms are located. GPT/Claude architectures bake safety into the model weights via RLHF, while Mistral's open-weight MoE architecture treats safety as an external, modular component.
+        </p>
+
+        <!-- Comparison Visualization -->
+        <div class="bg-white border border-gray-200 rounded-xl p-8 mb-10 shadow-sm overflow-hidden">
+            <h3 class="text-center font-bold text-gray-400 text-xs uppercase tracking-widest mb-8">Model-Internal vs. Model-External Safety</h3>
+            
+            <div class="grid md:grid-cols-2 gap-8 relative">
+                <!-- Vertical Divider (Visual only) -->
+                <div class="hidden md:block absolute left-1/2 top-0 bottom-0 w-px bg-gray-100 -ml-px"></div>
+
+                <!-- Left: GPT/Claude -->
+                <div class="flex flex-col items-center">
+                    <h4 class="font-serif font-bold text-gray-800 mb-1">GPT / Claude Family</h4>
+                    <span class="text-xs font-mono text-gray-500 mb-6">Dense Transformer + RLHF</span>
+                    
+                    <svg viewBox="0 0 240 280" class="w-full max-w-[280px]">
+                        <!-- Input -->
+                        <text x="120" y="15" text-anchor="middle" font-size="10" fill="#6b7280" font-family="Inter">Input Token</text>
+                        <line x1="120" y1="20" x2="120" y2="40" stroke="#cbd5e1" stroke-width="1.5" marker-end="url(#arrowhead-gray)" />
+
+                        <!-- Dense Model Block Container -->
+                        <rect x="30" y="40" width="180" height="180" rx="8" fill="#f8fafc" stroke="#64748b" stroke-width="2" />
+                        <text x="120" y="55" text-anchor="middle" font-size="8" font-weight="bold" fill="#475569" font-family="Inter">Dense Transformer (The Model)</text>
+                        
+                        <!-- Internal Layers representing Baked-in Safety -->
+                        <g transform="translate(45, 70)">
+                            <!-- Layer 1 -->
+                            <rect x="0" y="0" width="150" height="25" rx="4" fill="#dcfce7" stroke="#86efac" />
+                            <text x="75" y="16" text-anchor="middle" font-size="8" fill="#166534" font-family="Inter">Layer 1 (Safety Aligned)</text>
+                            
+                            <!-- Arrow -->
+                            <path d="M75 25 L75 35" stroke="#cbd5e1" stroke-width="1.5" />
+                            
+                            <!-- Layer 2 -->
+                            <rect x="0" y="35" width="150" height="25" rx="4" fill="#dcfce7" stroke="#86efac" />
+                            <text x="75" y="51" text-anchor="middle" font-size="8" fill="#166534" font-family="Inter">Layer N (Safety Aligned)</text>
+                            
+                            <!-- Arrow -->
+                            <path d="M75 60 L75 70" stroke="#cbd5e1" stroke-width="1.5" />
+
+                            <!-- Layer 3 -->
+                            <rect x="0" y="70" width="150" height="25" rx="4" fill="#dcfce7" stroke="#86efac" />
+                            <text x="75" y="86" text-anchor="middle" font-size="8" fill="#166534" font-family="Inter">Layer N+1 (Safety Aligned)</text>
+                        </g>
+
+                        <!-- Lock Icon inside model -->
+                        <circle cx="200" cy="50" r="8" fill="white" stroke="#22c55e" stroke-width="1.5"/>
+                        <path d="M197 52 h6 v-3 a3 3 0 0 0 -6 0 z" fill="#22c55e" />
+
+                        <!-- Output -->
+                        <line x1="120" y1="220" x2="120" y2="240" stroke="#cbd5e1" stroke-width="1.5" marker-end="url(#arrowhead-gray)" />
+                        <text x="120" y="255" text-anchor="middle" font-size="10" font-weight="bold" fill="#333333" font-family="Inter">Safe Output</text>
+
+                        <defs>
+                            <marker id="arrowhead-gray" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                                <polygon points="0 0, 8 3, 0 6" fill="#cbd5e1" />
+                            </marker>
+                        </defs>
+                    </svg>
+                    
+                    <div class="mt-4 text-center">
+                        <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-green-50 text-green-700 text-xs font-semibold rounded-full border border-green-100">
+                            <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                            Safety Inside Weights
+                        </span>
+                        <p class="text-xs text-gray-500 mt-2 px-4">
+                            Safety is inseparable from the model layers.
+                            <a href="https://openai.com/index/gpt-4-system-card/" target="_blank" class="text-claude-link hover:underline ml-1">GPT-4 System Card ↗</a>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Right: Mistral -->
+                <div class="flex flex-col items-center">
+                    <h4 class="font-serif font-bold text-gray-800 mb-1">Mistral Family</h4>
+                    <span class="text-xs font-mono text-gray-500 mb-6">MoE + Open Weights</span>
+                    
+                    <svg viewBox="0 0 240 280" class="w-full max-w-[280px]">
+                        <!-- Input -->
+                        <text x="120" y="15" text-anchor="middle" font-size="10" fill="#6b7280" font-family="Inter">Input Token</text>
+                        <line x1="120" y1="20" x2="120" y2="30" stroke="#cbd5e1" stroke-width="1.5" marker-end="url(#arrowhead-gray)" />
+
+                        <!-- VISUAL GAP 1 -->
+                        
+                        <!-- External Safety Filter (Top) -->
+                        <rect x="50" y="30" width="140" height="25" rx="4" fill="#fff7ed" stroke="#f97316" stroke-width="2" stroke-dasharray="2 2" />
+                        <text x="120" y="46" text-anchor="middle" font-size="9" font-weight="bold" fill="#c2410c" font-family="Inter">Optional Safety Filter</text>
+
+                        <!-- API Boundary Line -->
+                        <line x1="120" y1="55" x2="120" y2="75" stroke="#f97316" stroke-width="2" marker-end="url(#arrowhead-orange)" />
+                        <text x="165" y="68" text-anchor="middle" font-size="7" fill="#c2410c" font-family="Inter">API / Host Layer</text>
+
+                        <!-- MoE Model Block (Raw) -->
+                        <rect x="30" y="75" width="180" height="110" rx="8" fill="#f1f5f9" stroke="#94a3b8" stroke-width="2" />
+                        <text x="120" y="90" text-anchor="middle" font-size="8" font-weight="bold" fill="#64748b" font-family="Inter">Mistral MoE (The Model)</text>
+                        
+                        <!-- Experts (Raw) -->
+                        <g transform="translate(45, 100)">
+                             <rect x="0" y="0" width="40" height="60" rx="2" fill="#cbd5e1" />
+                             <text x="20" y="30" text-anchor="middle" font-size="6" fill="white" font-family="Inter">Expert A</text>
+                             
+                             <rect x="55" y="0" width="40" height="60" rx="2" fill="#cbd5e1" />
+                             <text x="75" y="30" text-anchor="middle" font-size="6" fill="white" font-family="Inter">Expert B</text>
+                             
+                             <rect x="110" y="0" width="40" height="60" rx="2" fill="#cbd5e1" />
+                             <text x="130" y="30" text-anchor="middle" font-size="6" fill="white" font-family="Inter">Expert C</text>
+
+                             <text x="75" y="72" text-anchor="middle" font-size="7" fill="#475569" font-family="Inter" font-style="italic">Raw Weights (No Safety)</text>
+                        </g>
+
+                        <!-- API Boundary Line -->
+                        <line x1="120" y1="185" x2="120" y2="205" stroke="#f97316" stroke-width="2" marker-end="url(#arrowhead-orange)" />
+                        <text x="165" y="198" text-anchor="middle" font-size="7" fill="#c2410c" font-family="Inter">API / Host Layer</text>
+                        
+                        <!-- External Safety Filter (Bottom) -->
+                        <rect x="50" y="205" width="140" height="25" rx="4" fill="#fff7ed" stroke="#f97316" stroke-width="2" stroke-dasharray="2 2" />
+                        <text x="120" y="221" text-anchor="middle" font-size="9" font-weight="bold" fill="#c2410c" font-family="Inter">Optional Moderation</text>
+
+                        <!-- Output -->
+                        <line x1="120" y1="230" x2="120" y2="250" stroke="#cbd5e1" stroke-width="1.5" marker-end="url(#arrowhead-gray)" />
+                        <text x="120" y="265" text-anchor="middle" font-size="10" font-weight="bold" fill="#333333" font-family="Inter">Safe Output?</text>
+
+                        <defs>
+                            <marker id="arrowhead-orange" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                                <polygon points="0 0, 8 3, 0 6" fill="#f97316" />
+                            </marker>
+                        </defs>
+                    </svg>
+
+                    <div class="mt-4 text-center">
+                        <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-orange-50 text-orange-700 text-xs font-semibold rounded-full border border-orange-100">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"/></svg>
+                            Safety Outside Model
+                        </span>
+                        <p class="text-xs text-gray-500 mt-2 px-4">
+                            Safety is an external wrapper, distinct from the raw model weights.
+                            <a href="https://docs.mistral.ai/capabilities/guardrailing/" target="_blank" class="text-claude-link hover:underline ml-1">Mistral Guardrailing Docs ↗</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detailed Breakdown -->
+        <div class="grid md:grid-cols-2 gap-6">
+            <div class="glass-card p-6 rounded-xl">
+                <h3 class="font-bold text-gray-800 mb-3 text-sm uppercase tracking-wide">Mechanistic Reason: Dense</h3>
+                <p class="text-sm text-gray-600 leading-relaxed">
+                    Because every layer touches every token in a dense transformer (GPT-4/Claude), alignment fine-tuning affects all internal pathways. Refusal behaviors become internal "attractor states" within the probability space. Safety is reinforced by, but not solely dependent on, API filters.
+                </p>
+                <div class="mt-4 pt-4 border-t border-gray-100">
+                    <a href="https://www.anthropic.com/research/constitutional-ai-harmlessness-from-ai-feedback" class="text-xs font-mono text-claude-link hover:underline">Ref: Constitutional AI (Anthropic) ↗</a>
+                </div>
+            </div>
+            
+            <div class="glass-card p-6 rounded-xl">
+                <h3 class="font-bold text-gray-800 mb-3 text-sm uppercase tracking-wide">Mechanistic Reason: MoE</h3>
+                <p class="text-sm text-gray-600 leading-relaxed">
+                    In Mixture-of-Experts (Mistral), tokens only activate specific pathways ($k$ out of $N$ experts). Since base weights are released without RLHF, there is no consistent internal anchor for safety. It must be implemented as modular, replaceable filters (gateways or system prompts) by the deployer.
+                </p>
+                <div class="mt-4 pt-4 border-t border-gray-100">
+                    <a href="https://arxiv.org/abs/2401.04088" class="text-xs font-mono text-claude-link hover:underline">Ref: Mixtral 8x7B Paper ↗</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <hr class="border-gray-200 my-16">
+
+    <!-- Section 4: MoE Architecture Details -->
+    <section class="mb-20">
+        <h2 class="text-2xl font-serif text-claude-text mb-8 flex items-center gap-3">
+            <span class="w-8 h-8 rounded-full bg-claude-accent text-white flex items-center justify-center text-sm font-sans font-bold">4</span>
+            MoE: Efficiency vs. Interpretability
+        </h2>
+
+        <!-- MoE Visualization -->
+        <div class="mb-10 p-8 bg-white border border-gray-200 rounded-xl shadow-sm">
+            <h3 class="text-center font-bold text-gray-400 text-xs uppercase tracking-widest mb-6">Visualizing Sparse Mixture of Experts</h3>
+            <div class="flex flex-col md:flex-row items-center justify-center gap-8 md:gap-12">
+                
+                <!-- Input -->
+                <div class="text-center">
+                    <div class="w-20 h-10 border border-gray-300 rounded flex items-center justify-center bg-gray-50 text-xs font-mono">Token Input</div>
+                </div>
+
+                <!-- Router -->
+                <div class="relative group">
+                    <div class="w-24 h-24 rounded-full border-2 border-claude-accent bg-orange-50 flex flex-col items-center justify-center z-10 relative shadow-sm">
+                        <span class="font-bold text-sm text-claude-accent">Router</span>
+                        <span class="text-[10px] text-claude-subtle mt-1">Gating Net</span>
+                    </div>
+                    <!-- Arrows out -->
+                    <div class="absolute top-1/2 left-full w-8 h-0.5 bg-gray-300 -translate-y-1/2"></div>
+                </div>
+
+                <!-- Experts -->
+                <div class="flex flex-col gap-2">
+                    <div class="w-32 h-8 border border-gray-200 rounded flex items-center justify-center text-xs text-gray-400 bg-gray-50">Expert 1 (Dormant)</div>
+                    <div class="w-32 h-8 border-2 border-claude-accent rounded flex items-center justify-center text-xs font-bold text-claude-text bg-white shadow-md transform -translate-x-2 transition-transform">Expert 2 (Active)</div>
+                    <div class="w-32 h-8 border border-gray-200 rounded flex items-center justify-center text-xs text-gray-400 bg-gray-50">Expert 3 (Dormant)</div>
+                    <div class="w-32 h-8 border-2 border-claude-accent rounded flex items-center justify-center text-xs font-bold text-claude-text bg-white shadow-md transform -translate-x-2 transition-transform">Expert 4 (Active)</div>
+                    <div class="w-32 h-8 border border-gray-200 rounded flex items-center justify-center text-xs text-gray-400 bg-gray-50">Expert 5 (Dormant)</div>
+                </div>
+
+                <!-- Output -->
+                <div class="text-center md:pl-8 border-l border-gray-200">
+                    <div class="text-[10px] text-gray-500 mb-2">Weighted Sum</div>
+                    <div class="w-20 h-10 border border-gray-800 bg-gray-800 text-white rounded flex items-center justify-center text-xs font-mono">Output</div>
+                </div>
+            </div>
+            <p class="text-center text-xs text-gray-400 mt-6 max-w-lg mx-auto">
+                Only a fraction of parameters (Active Params) are utilized per token, allowing massive scale (Total Params) with efficient inference.
+            </p>
+        </div>
+
+        <div class="grid md:grid-cols-2 gap-8">
+            <div>
+                <h4 class="font-bold text-gray-800 mb-2">Strengths</h4>
+                <p class="text-sm text-gray-600 mb-4">
+                    MoE allows LLMs to scale to immense total parameter counts while maintaining a compute budget manageable for inference.
+                    <br><a href="https://mistral.ai/news/" class="text-xs text-claude-accent hover:underline">See Mistral Large 3 Specs ↗</a>
+                </p>
+            </div>
+            <div>
+                <h4 class="font-bold text-gray-800 mb-2">Vulnerabilities (SAFEx)</h4>
+                <p class="text-sm text-gray-600 mb-4">
+                    Safety behavior often relies on a small subset of "positional experts." If these specific experts are attacked or bypassed, safety collapses.
+                    <br><a href="https://arxiv.org/abs/2506.17368" class="text-xs text-claude-accent hover:underline">Read SAFEx Paper (2025) ↗</a>
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section 5: Mistral Specifics -->
+    <section class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden mb-20">
+        <div class="bg-gray-50 px-8 py-6 border-b border-gray-200 flex justify-between items-center">
+            <h2 class="text-xl font-serif font-bold text-gray-800">5. Mistral-Specific Analysis</h2>
+            <span class="text-xs font-mono uppercase text-gray-500 tracking-widest">Case Study</span>
+        </div>
+        
+        <div class="p-8">
+            <div class="grid md:grid-cols-2 gap-10">
+                <!-- Specs -->
+                <div>
+                    <h3 class="font-semibold text-gray-800 mb-4">Architecture & Specs</h3>
+                    <ul class="text-sm space-y-3 text-gray-600">
+                        <li class="flex justify-between border-b border-gray-100 pb-2">
+                            <span>Model</span>
+                            <span class="font-mono font-bold text-gray-800">Mistral Large 3</span>
+                        </li>
+                        <li class="flex justify-between border-b border-gray-100 pb-2">
+                            <span>Type</span>
+                            <span class="font-mono">Sparse MoE</span>
+                        </li>
+                        <li class="flex justify-between border-b border-gray-100 pb-2">
+                            <span>Active Params</span>
+                            <span class="font-mono">41B</span>
+                        </li>
+                        <li class="flex justify-between border-b border-gray-100 pb-2">
+                            <span>Total Params</span>
+                            <span class="font-mono">675B</span>
+                        </li>
+                        <li class="flex justify-between border-b border-gray-100 pb-2">
+                            <span>License</span>
+                            <span class="font-mono text-green-600">Apache 2.0</span>
+                        </li>
+                    </ul>
+                    <div class="mt-6 text-xs text-gray-500">
+                        Source: <a href="https://mistral.ai/news/" class="underline hover:text-claude-accent">Mistral Official ↗</a>
+                    </div>
+                </div>
+
+                <!-- Findings -->
+                <div>
+                    <h3 class="font-semibold text-gray-800 mb-4">Safety & Governance</h3>
+                    <div class="space-y-4">
+                        <div class="bg-red-50 p-4 rounded-lg border border-red-100">
+                            <h4 class="text-xs font-bold text-red-800 uppercase mb-1">Risk Factor</h4>
+                            <p class="text-sm text-red-900">
+                                Independent labs report Mistral Pixtral models were significantly more likely than GPT-4o/Claude to output harmful CBRN content under standardized tests.
+                            </p>
+                        </div>
+                        <p class="text-sm text-gray-600">
+                            Mistral provides system-prompt guardrails and moderation endpoints, but these are <em>optional patterns</em>. In local deployment, these can be completely bypassed, placing the governance burden entirely on the institution.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Summary Table -->
+    <section>
+        <h3 class="font-serif text-lg font-bold mb-6">Evidence Summary</h3>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left border-collapse">
+                <thead>
+                    <tr>
+                        <th class="border-b-2 border-gray-200 py-3 font-semibold text-gray-800">Feature / Resource</th>
+                        <th class="border-b-2 border-gray-200 py-3 font-semibold text-gray-800">Claim</th>
+                        <th class="border-b-2 border-gray-200 py-3 font-semibold text-gray-800">Key Source</th>
+                    </tr>
+                </thead>
+                <tbody class="text-gray-600">
+                    <tr class="hover:bg-gray-50 transition-colors">
+                        <td class="py-3 border-b border-gray-100 pr-4">MedMCQA / MedQA</td>
+                        <td class="py-3 border-b border-gray-100 pr-4">Exams measure knowledge, not safety or workflow.</td>
+                        <td class="py-3 border-b border-gray-100 font-mono text-xs"><a href="https://arxiv.org/abs/2203.14371" class="text-claude-accent hover:underline">arXiv:2203.14371</a></td>
+                    </tr>
+                    <tr class="hover:bg-gray-50 transition-colors">
+                        <td class="py-3 border-b border-gray-100 pr-4">MedHELM</td>
+                        <td class="py-3 border-b border-gray-100 pr-4">Requires 121-task taxonomy for realistic evaluation.</td>
+                        <td class="py-3 border-b border-gray-100 font-mono text-xs"><a href="https://arxiv.org/abs/2505.23802" class="text-claude-accent hover:underline">arXiv:2505.23802</a></td>
+                    </tr>
+                    <tr class="hover:bg-gray-50 transition-colors">
+                        <td class="py-3 border-b border-gray-100 pr-4">Open Weights</td>
+                        <td class="py-3 border-b border-gray-100 pr-4">Fine-tuning can erode safety even with benign data.</td>
+                        <td class="py-3 border-b border-gray-100 font-mono text-xs"><a href="https://aclanthology.org/2025.llmsec-1.10/" class="text-claude-accent hover:underline">Fraser et al.</a></td>
+                    </tr>
+                    <tr class="hover:bg-gray-50 transition-colors">
+                        <td class="py-3 border-b border-gray-100 pr-4">MoE Architecture</td>
+                        <td class="py-3 border-b border-gray-100 pr-4">Safety relies on sparse "positional experts".</td>
+                        <td class="py-3 border-b border-gray-100 font-mono text-xs"><a href="https://arxiv.org/abs/2506.17368" class="text-claude-accent hover:underline">SAFEx (2025)</a></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <footer class="mt-24 pt-8 border-t border-gray-200 text-center text-xs text-gray-400 font-sans">
+        <p>Generated for Research Analysis • Sources verified as of late 2025</p>
+    </footer>
+
+</body>
+</html>
